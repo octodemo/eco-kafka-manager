@@ -76,7 +76,7 @@ public class PermissionController {
     @Autowired
     private KafkaManager kafkaManager;
 
-    @RequestMapping(value = MAPPING, method = RequestMethod.GET) // TODO: what about not PatternType.LITERAL permissions?
+    @RequestMapping(value = MAPPING, method = RequestMethod.GET)
     public String permissions(
             @RequestParam(required = false) Integer page,
             @RequestParam Map<String, Object> paramsMap,
@@ -166,7 +166,7 @@ public class PermissionController {
             @PathVariable("permissionType") AclPermissionType permissionType,
             @PathVariable("operation") AclOperation operation,
             @PathVariable("principal") String principal,
-            @PathVariable("host") String host) { // TODO: it also deletes metadata that is not correct in many cases.
+            @PathVariable("host") String host) {
         PermissionDeleteParams deleteParams = PermissionDeleteParams.builder()
                 .resourceType(resourceType)
                 .resourceName(resourceName)
@@ -181,6 +181,16 @@ public class PermissionController {
 
     private Page<PermissionInfoWrapper> wrap(Page<PermissionInfo> page) {
         return page.map(PermissionInfoWrapper::wrap);
+    }
+
+    private static String buildPermissionUrl(
+            ResourceType resourceType,
+            String resourceName,
+            KafkaPrincipal kafkaPrincipal) {
+        return MAPPING +
+                "?resourceType=" + resourceType +
+                "&resourceName=" + resourceName +
+                "&kafkaPrincipal=" + kafkaPrincipal;
     }
 
 }

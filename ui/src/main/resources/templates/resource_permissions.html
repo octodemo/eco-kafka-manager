@@ -41,6 +41,49 @@
                                     class="btn btn-primary right-icon">
                                 Edit Metadata <span class="glyphicon glyphicon-tags"></span>
                             </a>
+
+
+                            <button
+                                    type="button"
+                                    class="btn btn-danger right-icon"
+                                    data-toggle="modal"
+                                    data-target="#delete-confirm">
+                                Delete Permissions <i class="fa fa-trash"></i>
+                            </button>
+                            <div id="delete-confirm" class="modal fade" role="dialog">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                            <h4 class="modal-title">Confirm Resource Permission Delete</h4>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>
+                                                Are you sure you want to delete all permissions that have the same Resource Type, Resource Name and Kafka Principle?
+                                            </p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <form
+                                                    th:action="@{/permissions/resource/{resourceType}/{resourceName}/{principal}/delete(resourceType=${resourceType},resourceName=${resourceName},principal=${kafkaPrincipal})}"
+                                                    method="post">
+                                                <button
+                                                        type="button"
+                                                        class="btn btn-primary"
+                                                        data-dismiss="modal">
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                        type="submit"
+                                                        class="btn btn-danger">
+                                                    Delete
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
                         </div>
                     </div>
         

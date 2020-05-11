@@ -19,6 +19,8 @@ import java.security.Principal;
 import java.util.List;
 
 import org.apache.commons.lang3.Validate;
+import org.apache.kafka.common.resource.ResourceType;
+import org.apache.kafka.common.security.auth.KafkaPrincipal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -552,11 +554,15 @@ public class KafkaManagerImpl implements KafkaManager {
     public void deletePermission(PermissionDeleteParams params) {
         Validate.notNull(params, "PermissionDeleteParams object is null");
 
-        metadataRepo.delete(
-                PermissionMetadataKey.with(
-                        params.getPrincipalObject(),
-                        params.getResourceType(),
-                        params.getResourceName()));
+        //delete metadata only if there is no other resource permission with same metadata key
+        if (!resourcePermissionsWithSameMetadataKeyExists(params.getResourceType(), params.getResourceName(),
+                params.getPrincipalObject())) {
+            metadataRepo.delete(
+                    PermissionMetadataKey.with(
+                            params.getPrincipalObject(),
+                            params.getResourceType(),
+                            params.getResourceName()));
+        }
 
         permissionRepo.delete(
                 params.getResourceType(),
@@ -567,7 +573,20 @@ public class KafkaManagerImpl implements KafkaManager {
                 params.getHost());
     }
 
-    @Override
+    private boolean resourcePermissionsWithSameMetadataKeyExists(
+            ResourceType resourceType,
+            String resourceName,
+            KafkaPrincipal kafkaPrincipal) {
+        return getAllPermissions().stream().
+                filter(
+                        permission ->
+                                permission.getKafkaPrincipal().equals(kafkaPrincipal) &&
+                                        permission.getResourceType() == resourceType &&
+                                        permission.getResourceName().equals(resourceName)).
+                count() > 1;
+    }
+
+        @Override
     public int getTransactionCount() {
         return transactionRepo.size();
     }

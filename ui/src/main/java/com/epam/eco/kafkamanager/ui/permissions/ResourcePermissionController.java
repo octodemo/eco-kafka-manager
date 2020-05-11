@@ -30,6 +30,7 @@ import org.apache.kafka.common.utils.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -37,6 +38,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.epam.eco.kafkamanager.KafkaManager;
 import com.epam.eco.kafkamanager.Metadata;
 import com.epam.eco.kafkamanager.PermissionInfo;
+import com.epam.eco.kafkamanager.PermissionDeleteParams;
 import com.epam.eco.kafkamanager.PermissionMetadataDeleteParams;
 import com.epam.eco.kafkamanager.PermissionMetadataUpdateParams;
 import com.epam.eco.kafkamanager.ui.utils.MetadataWrapper;
@@ -60,6 +62,8 @@ public class ResourcePermissionController {
 
     public static final String MAPPING = PermissionController.MAPPING + "/resource";
     public static final String MAPPING_METADATA = PermissionController.MAPPING + "/resource_metadata";
+    public static final String MAPPING_RESOURCE_PERMISSION = MAPPING + "/{resourceType}/{resourceName}/{principal}";
+    public static final String MAPPING_DELETE_RESOURCE_PERMISSIONS = MAPPING_RESOURCE_PERMISSION + "/delete";
 
     @Autowired
     private KafkaManager kafkaManager;
@@ -93,6 +97,31 @@ public class ResourcePermissionController {
                 });
 
         return VIEW;
+    }
+
+    @RequestMapping(value = MAPPING_DELETE_RESOURCE_PERMISSIONS, method = RequestMethod.POST)
+    public String deletePermissionsWithSameMetadataKey(
+            @PathVariable("resourceType") ResourceType resourceType,
+            @PathVariable("resourceName") String resourceName,
+            @PathVariable("principal") String principal) {
+
+        KafkaPrincipal kafkaPrincipalObject = SecurityUtils.parseKafkaPrincipal(principal);
+        List<PermissionInfo> permissionsToDelete = getResourcePermissionsWithSameMetadataKey(resourceType, resourceName,
+                kafkaPrincipalObject);
+
+        permissionsToDelete.stream().forEach(permission -> {
+            PermissionDeleteParams deleteParams = PermissionDeleteParams.builder()
+                    .resourceType(resourceType)
+                    .resourceName(resourceName)
+                    .permissionType(permission.getPermissionType())
+                    .operation(permission.getOperation())
+                    .principal(principal)
+                    .host(permission.getHost())
+                    .build();
+
+            kafkaManager.deletePermission(deleteParams);
+        });
+        return "redirect:" + PermissionController.MAPPING;
     }
 
     @RequestMapping(value = MAPPING_METADATA, method = RequestMethod.GET)
@@ -177,8 +206,8 @@ public class ResourcePermissionController {
 
         throw new RuntimeException(
                 String.format(
-                        "Principal %s has no permissions for resource %s(%s)",
-                        permissions.get(0).getResourceName(), permissions.get(0).getResourceType()));
+                        "Principal %s has no permissions for resource %s (%s)",
+                        principal.getName(), permissions.get(0).getResourceName(), permissions.get(0).getResourceType()));
     }
 
     private List<PermissionInfo> getResourcePermissions(ResourceType resourceType, String resourceName) {
@@ -201,6 +230,18 @@ public class ResourcePermissionController {
                         permission ->
                             permission.getKafkaPrincipal().equals(kafkaPrincipal) &&
                             !permissionsToExcludeSet.contains(permission)).
+                collect(Collectors.toList());
+    }
+
+
+    private List<PermissionInfo> getResourcePermissionsWithSameMetadataKey(ResourceType resourceType, String resourceName,
+                                                                           KafkaPrincipal kafkaPrincipalObject) {
+        return kafkaManager.getAllPermissions().stream().
+                filter(
+                        permission ->
+                                permission.getKafkaPrincipal().equals(kafkaPrincipalObject) &&
+                                        permission.getResourceType() == resourceType &&
+                                        permission.getResourceName().equals(resourceName)).
                 collect(Collectors.toList());
     }
 

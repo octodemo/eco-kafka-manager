@@ -56,6 +56,8 @@
                                                     th:each="type : ${T(org.apache.kafka.common.resource.ResourceType).values()}"
                                                     th:value="${type}"
                                                     th:text="${type}"
+                                                    th:disabled = "${type == T(org.apache.kafka.common.resource.ResourceType).ANY
+                                                    || type == T(org.apache.kafka.common.resource.ResourceType).UNKNOWN}"
                                                     th:selected="${type == defaultResourceType}">
                                             </option>
                                         </select>
@@ -97,6 +99,8 @@
                                                     th:each="type : ${T(org.apache.kafka.common.acl.AclPermissionType).values()}"
                                                     th:value="${type}"
                                                     th:text="${type}"
+                                                    th:disabled = "${type == T(org.apache.kafka.common.acl.AclPermissionType).ANY
+                                                    || type == T(org.apache.kafka.common.acl.AclPermissionType).UNKNOWN}"
                                                     th:selected="${type == defaultPermissionType}">
                                             </option>
                                         </select>
@@ -108,6 +112,8 @@
                                                     th:each="op : ${T(org.apache.kafka.common.acl.AclOperation).values()}"
                                                     th:value="${op}"
                                                     th:text="${op}"
+                                                    th:disabled = "${op == T(org.apache.kafka.common.acl.AclOperation).UNKNOWN
+                                                    || op == T(org.apache.kafka.common.acl.AclOperation).ANY}"
                                                     th:selected="${op == defaultOperation}">
                                             </option>
                                         </select>
